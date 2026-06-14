@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const body = await req.json();
-  const { leadId, status } = body as { leadId: string; status: string };
+  const { leadId, status, observacoes } = body as { leadId: string; status?: string; observacoes?: string };
 
   const leads = readLeads();
   const idx = leads.findIndex((l) => l.id === leadId);
@@ -37,7 +37,10 @@ export async function PATCH(req: NextRequest) {
     return Response.json({ error: "Lead não encontrado" }, { status: 404 });
   }
 
-  leads[idx] = { ...leads[idx], status };
+  const updates: Record<string, unknown> = {};
+  if (status !== undefined) updates.status = status;
+  if (observacoes !== undefined) updates.observacoes = observacoes;
+  leads[idx] = { ...leads[idx], ...updates };
   writeLeads(leads);
   return Response.json(leads[idx]);
 }

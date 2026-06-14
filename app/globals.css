@@ -654,11 +654,102 @@ path.leaflet-interactive:focus { outline: none !important; }
 }
 
 /* ── main content ── */
+/* ── stats bar ── */
+.plataforma-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 10px 28px;
+  background: rgba(255, 253, 250, 0.80);
+  border-bottom: 1px solid rgba(109, 68, 192, 0.10);
+  flex-shrink: 0;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0 20px;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1614;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.stat-label {
+  font-size: 10px;
+  color: #9a9088;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 28px;
+  background: rgba(109, 68, 192, 0.12);
+  flex-shrink: 0;
+}
+
+.stats-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: #9a9088;
+  padding: 0 16px 0 0;
+}
+
+/* ── stats bar local (por corretor) ── */
+.plataforma-stats-local {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 6px 28px;
+  background: rgba(109, 68, 192, 0.05);
+  border-bottom: 1px solid rgba(109, 68, 192, 0.10);
+  flex-shrink: 0;
+}
+
+.stats-local-who {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-right: 16px;
+}
+
+.stats-local-nome {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6d44c0;
+  letter-spacing: 0.02em;
+}
+
+.stat-sm {
+  padding: 0 14px;
+}
+
+.stat-value-sm {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1614;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
 .plataforma-main {
   max-width: 1400px;
   margin: 0 auto;
   padding: 28px 28px;
-  height: calc(100vh - 61px);
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
@@ -1044,6 +1135,141 @@ path.leaflet-interactive:focus { outline: none !important; }
 }
 
 .aceitar-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ── kcard observações inline ── */
+.kcard-obs {
+  font-style: italic;
+  font-size: 11px;
+  color: #6b6560;
+  border-top: 1px solid #ede8e3;
+  padding-top: 6px;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* ── modal de detalhes do lead ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-card {
+  background: #fffdfb;
+  border-radius: 16px;
+  width: 420px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 24px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1614;
+  letter-spacing: -0.01em;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #9a9088;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.modal-close:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.modal-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  background: rgba(109, 68, 192, 0.04);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.modal-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.modal-obs-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modal-obs-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #9a9088;
+}
+
+.modal-obs-area {
+  width: 100%;
+  min-height: 80px;
+  border: 1px solid #ede8e3;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #1a1614;
+  resize: vertical;
+  outline: none;
+  background: #fff;
+  transition: border-color 0.2s;
+}
+
+.modal-obs-area:focus {
+  border-color: #6d44c0;
+}
+
+.modal-save-btn {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background: #6d44c0;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.modal-save-btn:hover:not(:disabled) {
+  background: #5a35a8;
+}
+
+.modal-save-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
