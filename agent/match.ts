@@ -50,7 +50,7 @@ function norm(s: string): string {
 export function buscarImoveis(
   filtros: Filtros,
   imoveis: Imovel[],
-  topN = 5,
+  topN = 20,
 ): Resultado[] {
   const local = filtros.bairro ? norm(filtros.bairro) : null;
 

@@ -164,7 +164,10 @@ export async function POST(req: Request) {
       let result: unknown;
 
       if (block.name === "buscar_imoveis") {
-        const encontrados = buscarImoveis(block.input as Filtros, IMOVEIS);
+        const filtros = block.input as Filtros;
+        // Sem finalidade + sem orçamento = navegação ampla: mostra até 30
+        const topN = !filtros.finalidade && !filtros.orcamento ? 30 : 20;
+        const encontrados = buscarImoveis(filtros, IMOVEIS, topN);
         const lista = encontrados.map((r) => ({
           ...r.imovel,
           compatibilidade: Number(r.score.toFixed(2)),
