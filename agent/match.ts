@@ -68,78 +68,64 @@ function norm(s: string): string {
 export function buscarImoveis(
   filtros: Filtros,
   imoveis: Imovel[] = carregarImoveis(),
-  topN = 4,
+  topN = 5,
 ): Resultado[] {
+  const local = filtros.bairro ? norm(filtros.bairro) : null;
 
-  // --- Hard constraints: finalidade sempre; preço com tolerância ---
-  const candidatos = imoveis.filter((im) => {
+  // ── Hard filters ────────────────────────────────────────────────
+  // Localização e tipo são eliminatórios. Preço nunca elimina.
+  let candidatos = imoveis.filter((im) => {
     if (norm(im.finalidade) !== norm(filtros.finalidade)) return false;
-    if (
-      filtros.orcamento != null &&
-      im.preco > filtros.orcamento * (1 + TOLERANCIA_PRECO)
-    )
-      return false;
+    if (filtros.tipo && norm(im.tipo) !== norm(filtros.tipo)) return false;
+    if (local) {
+      const campos = norm(`${im.bairro} ${im.cidade}`);
+      if (!campos.includes(local)) return false;
+    }
     return true;
   });
 
-  // --- Score por proximidade (cada critério ativo entra normalizado) ---
+  // Se tipo + geo zerou, relaxa só o tipo (mantém geo).
+  if (candidatos.length === 0 && filtros.tipo && local) {
+    candidatos = imoveis.filter((im) => {
+      if (norm(im.finalidade) !== norm(filtros.finalidade)) return false;
+      const campos = norm(`${im.bairro} ${im.cidade}`);
+      return campos.includes(local!);
+    });
+  }
+
+  // ── Soft scoring: quartos + preço ───────────────────────────────
   const resultados = candidatos.map((im) => {
-    const pesos: number[] = [];
-    const notas: number[] = [];
+    let score = 0;
     const matched: string[] = [];
 
-    // Preço: dentro do teto = ótimo; acima (até tolerância) penaliza.
+    // Quartos: exato = 1.0, ±1 = 0.5, mais longe = 0.1
+    if (filtros.quartos != null) {
+      const diff = Math.abs(im.quartos - filtros.quartos);
+      score += diff === 0 ? 1.0 : diff === 1 ? 0.5 : 0.1;
+      matched.push(`${im.quartos} quartos`);
+    } else {
+      score += 0.5; // neutro quando não especificado
+    }
+
+    // Preço: dentro do teto = bônus; acima = penaliza proporcionalmente.
     if (filtros.orcamento != null) {
-      pesos.push(0.3);
       if (im.preco <= filtros.orcamento) {
-        notas.push(1);
+        score += 1.0;
         matched.push(`dentro do orçamento (R$ ${im.preco.toLocaleString("pt-BR")})`);
       } else {
         const excesso = (im.preco - filtros.orcamento) / filtros.orcamento;
-        notas.push(Math.max(0, 1 - excesso / TOLERANCIA_PRECO));
-        matched.push(`um pouco acima do teto (R$ ${im.preco.toLocaleString("pt-BR")})`);
+        score += Math.max(0, 1 - excesso * 2);
+        matched.push(`próximo ao orçamento (R$ ${im.preco.toLocaleString("pt-BR")})`);
       }
+    } else {
+      score += 0.5;
     }
 
-    // Quartos: exato = 1, ±1 = 0.5, resto cai rápido.
-    if (filtros.quartos != null) {
-      pesos.push(0.35);
-      const diff = Math.abs(im.quartos - filtros.quartos);
-      const nota = diff === 0 ? 1 : diff === 1 ? 0.5 : 0.1;
-      notas.push(nota);
-      if (diff === 0) matched.push(`${im.quartos} quartos como você pediu`);
-      else matched.push(`${im.quartos} quartos (você queria ${filtros.quartos})`);
+    if (local) {
+      if (norm(im.bairro).includes(local)) matched.push(`no bairro ${im.bairro}`);
+      else matched.push(`em ${im.cidade}`);
     }
-
-    // Bairro: exato = 1; mesma cidade = 0.3.
-    if (filtros.bairro) {
-      pesos.push(0.25);
-      if (norm(im.bairro) === norm(filtros.bairro)) {
-        notas.push(1);
-        matched.push(`no bairro ${im.bairro}`);
-      } else if (norm(im.cidade) === norm(filtros.bairro)) {
-        notas.push(0.3);
-        matched.push(`em ${im.cidade}`);
-      } else {
-        notas.push(0.2);
-        matched.push(`no bairro ${im.bairro} (você pediu ${filtros.bairro})`);
-      }
-    }
-
-    // Tipo: só conta se o lead especificou.
-    if (filtros.tipo) {
-      pesos.push(0.1);
-      if (norm(im.tipo) === norm(filtros.tipo)) {
-        notas.push(1);
-        matched.push(`é ${im.tipo}`);
-      } else {
-        notas.push(0);
-      }
-    }
-
-    const somaPesos = pesos.reduce((a, b) => a + b, 0) || 1;
-    const score =
-      pesos.reduce((acc, p, i) => acc + p * notas[i], 0) / somaPesos;
+    if (filtros.tipo) matched.push(`é ${im.tipo}`);
 
     return { imovel: im, score, matchedFields: matched };
   });

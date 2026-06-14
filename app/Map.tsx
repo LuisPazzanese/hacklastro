@@ -19,11 +19,18 @@ export default function Map({
   // Inicializa o mapa uma vez, centrado no Brasil.
   useEffect(() => {
     if (mapRef.current) return;
-    const map = L.map("map", { zoomControl: false, attributionControl: false }).setView(
-      BRASIL,
-      4,
+    const bounds = L.latLngBounds(
+      L.latLng(-38, -80),  // SW — sul da Patagônia / oeste do Acre
+      L.latLng(10, -28),   // NE — norte do Caribe / litoral nordeste
     );
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+    const map = L.map("map", {
+      zoomControl: false,
+      attributionControl: false,
+      minZoom: 4,
+      maxBounds: bounds,
+      maxBoundsViscosity: 1.0,
+    }).setView(BRASIL, 5);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
       maxZoom: 19,
     }).addTo(map);
     layerRef.current = L.layerGroup().addTo(map);
@@ -35,6 +42,7 @@ export default function Map({
     const map = mapRef.current;
     const layer = layerRef.current;
     if (!map || !layer) return;
+    map.invalidateSize();
     layer.clearLayers();
 
     if (!imoveis.length) {
@@ -46,11 +54,15 @@ export default function Map({
     imoveis.forEach((im) => {
       if (typeof im.lat !== "number" || typeof im.lng !== "number") return;
       pontos.push([im.lat, im.lng]);
+      const label =
+        im.preco >= 1_000_000
+          ? `R$ ${(im.preco / 1_000_000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}M`
+          : `R$ ${Math.round(im.preco / 1000)}k`;
       const icon = L.divIcon({
         className: "pin",
-        html: `<div class="pin-inner">R$ ${Math.round(im.preco / 1000)}k</div>`,
-        iconSize: [60, 26],
-        iconAnchor: [30, 26],
+        html: `<div class="pin-inner">${label}</div>`,
+        iconSize: [70, 26],
+        iconAnchor: [35, 26],
       });
       L.marker([im.lat, im.lng], { icon })
         .addTo(layer)

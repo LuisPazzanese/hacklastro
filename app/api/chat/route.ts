@@ -10,30 +10,55 @@ const MODEL = process.env.MODEL ?? "claude-sonnet-4-6";
 const MAX_STEPS = 8;
 const IMOVEIS = imoveisData as Imovel[];
 
-const SYSTEM = `Você é o SDR (pré-vendas) imobiliário da Lastro — simpático, objetivo e
-consultivo. Qualifica o lead numa conversa curta e recomenda imóveis da base, que
-aparecem num mapa do Brasil ao lado da conversa.
+const SYSTEM = `Você é um corretor de imóveis sênior da Lastro, empresa especializada em
+inteligência imobiliária. Seu papel é qualificar o cliente com precisão e
+recomendar as melhores opções disponíveis na base, que aparecem num mapa
+interativo ao lado desta conversa.
 
-COMO CONDUZIR:
-- Uma pergunta por vez, em tom natural. Antes de buscar, descubra no MÍNIMO a
-  finalidade (compra ou aluguel) e o orçamento; tente também cidade/bairro,
-  quartos e tipo (apto/casa), mas não trave a conversa se o lead não souber.
-- Faça no máximo 2-3 perguntas. Assim que tiver finalidade + orçamento, chame
-  a tool buscar_imoveis.
+POSTURA PROFISSIONAL:
+- Tom formal e consultivo, como um corretor experiente — não casual nem
+  excessivamente animado.
+- Sem emojis. Sem gírias. Sem exclamações desnecessárias.
+- Sem formatação markdown: não use **, *, #, listas com traço ou qualquer
+  marcação. Escreva texto corrido, simples.
+- Frases curtas e objetivas.
 
-AO RECOMENDAR:
-- Os imóveis aparecem no mapa e em cards ao lado, então seja BREVE no texto:
-  destaque os 1-2 melhores em uma ou duas frases, dizendo por que casam (use os
-  matchedFields). Não descreva todos em detalhe — o mapa e os cards fazem isso.
+QUALIFICAÇÃO:
+- Uma pergunta por vez. Antes de buscar, obtenha no mínimo finalidade
+  (compra ou aluguel) e orçamento. Se possível, também cidade/bairro,
+  número de quartos e tipo (apartamento/casa).
+- No máximo 2 perguntas antes de acionar a busca — não prolongue
+  desnecessariamente.
+
+RECOMENDAÇÃO:
+- Os imóveis já aparecem no mapa e nos cards. No texto, seja direto:
+  mencione os 1-2 destaques e o motivo técnico pelo qual atendem ao perfil
+  (use os matchedFields). Não descreva todos os imóveis em detalhe.
+- Nunca diga "não encontrei", "base vazia" ou similar. Sempre há opções —
+  apresente as mais próximas do perfil e ofereça ajustar algum critério.
+- Quando quiser oferecer alternativas ao usuário (ex: tipo, finalidade,
+  faixa de preço), liste as opções em formato de lista iniciada por
+  "OPÇÕES:" — uma por linha, começando com "- ". Exemplo:
+  "Posso buscar em qual tipo de imóvel?
+  OPÇÕES:
+  - Apartamento
+  - Casa"
+  O sistema transforma essas linhas em botões automaticamente.
 
 FECHAMENTO:
-- Quando o lead curtir um imóvel ou pedir visita, peça nome e um contato de forma
-  natural e chame registrar_lead. Depois confirme que um corretor dará seguimento.
+- Quando o cliente demonstrar interesse em um imóvel (mensagem começa com
+  "Tenho interesse no imóvel"), responda com UMA frase reconhecendo a escolha
+  e pergunte: nome completo e WhatsApp (ou e-mail). Nada mais.
+- Assim que tiver nome e contato, chame registrar_lead imediatamente com
+  todos os dados da conversa (finalidade, orçamento, bairro, imóvel de
+  interesse). Depois confirme: "Perfeito, [nome]. Um corretor da Lastro
+  entrará em contato pelo seu WhatsApp em breve."
 
 REGRAS:
-- Nunca invente imóveis, preços ou bairros — use só o que a tool devolveu.
-- Se a busca não achar nada, sugira relaxar um critério.
-- Responda sempre em português brasileiro, caloroso e conciso.`;
+- Nunca invente imóveis, valores ou localizações. Use apenas o retorno da tool.
+- Se a busca não retornar resultados, sugira ajustar algum critério com uma
+  frase direta e profissional.
+- Responda sempre em português brasileiro.`;
 
 const tools: Anthropic.Tool[] = [
   {
@@ -78,6 +103,38 @@ const tools: Anthropic.Tool[] = [
     },
   },
 ];
+
+async function notificarCorretor(lead: Record<string, unknown>) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!token || !chatId) return;
+
+  const imoveis = (lead.imoveis_interesse as string[] | undefined)?.join(", ") ?? "—";
+  const texto = [
+    "🏠 Novo lead — Lastro SDR",
+    `👤 Nome: ${lead.nome ?? "não informado"}`,
+    `📱 Contato: ${lead.contato ?? "não informado"}`,
+    `🎯 Finalidade: ${lead.finalidade ?? "—"}`,
+    `💰 Orçamento: ${lead.orcamento ? `R$ ${Number(lead.orcamento).toLocaleString("pt-BR")}` : "—"}`,
+    `🛏 Quartos: ${lead.quartos ?? "—"}`,
+    `📍 Região: ${lead.bairro ?? "—"}`,
+    `🏢 Imóveis de interesse: ${imoveis}`,
+    lead.observacoes ? `📝 Obs: ${lead.observacoes}` : "",
+  ].filter(Boolean).join("\n");
+
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text: texto }),
+    });
+    const json = await res.json();
+    if (!json.ok) console.error("[Telegram] erro:", JSON.stringify(json));
+    else console.log("[Telegram] mensagem enviada ok");
+  } catch (e) {
+    console.error("[Telegram] fetch falhou:", e);
+  }
+}
 
 export async function POST(req: Request) {
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -129,12 +186,12 @@ export async function POST(req: Request) {
           compatibilidade: Number(r.score.toFixed(2)),
           matchedFields: r.matchedFields,
         }));
-        if (lista.length) imoveisEncontrados = lista;
-        result = lista.length
-          ? { encontrados: lista.length, imoveis: lista }
-          : { encontrados: 0, aviso: "Nenhum imóvel bateu. Sugira relaxar um critério." };
+        imoveisEncontrados = lista;
+        result = { encontrados: lista.length, imoveis: lista };
       } else if (block.name === "registrar_lead") {
-        leadRegistrado = { registrado_em: new Date().toISOString(), ...(block.input as object) };
+        const lead = { registrado_em: new Date().toISOString(), ...(block.input as object) } as Record<string, unknown>;
+        leadRegistrado = lead;
+        await notificarCorretor(lead);
         result = { ok: true, mensagem: "Lead registrado no CRM. Um corretor dará seguimento." };
       } else {
         result = { error: `tool desconhecida: ${block.name}` };
