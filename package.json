@@ -1,0 +1,27 @@
+{
+  "name": "hacklastro",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SDR imobiliário com IA — chat que qualifica o lead e mostra imóveis num mapa do Brasil.",
+  "scripts": {
+    "agent": "tsx --env-file=.env agent/agent.ts",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.104.1",
+    "leaflet": "^1.9.4",
+    "next": "^14.2.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/leaflet": "^1.9.12",
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "tsx": "^4.22.4",
+    "typescript": "^5.5.3"
+  }
+}
