@@ -65,7 +65,7 @@ path.leaflet-interactive:focus { outline: none !important; }
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(109,68,192,0.14);
-  border-radius: 4px;
+  border-radius: 20px;
   box-shadow: 0 8px 40px rgba(0,0,0,0.10), 0 0 0 1px rgba(109,68,192,0.06);
   animation: cardIn 0.55s cubic-bezier(0.22,1,0.36,1) both;
 }
@@ -121,7 +121,7 @@ path.leaflet-interactive:focus { outline: none !important; }
   width: min(500px, 88vw);
   background: #fff;
   border: 1px solid #d4c9b8;
-  border-radius: 2px;
+  border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 24px rgba(0,0,0,0.07);
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -249,7 +249,7 @@ path.leaflet-interactive:focus { outline: none !important; }
 
 .bubble-text {
   padding: 9px 13px;
-  border-radius: 3px;
+  border-radius: 12px;
   font-size: 14px;
   line-height: 1.5;
   white-space: pre-wrap;
@@ -258,13 +258,13 @@ path.leaflet-interactive:focus { outline: none !important; }
   background: #f0ece5;
   border: 1px solid #e0d8cc;
   color: #1a1614;
-  border-bottom-left-radius: 1px;
+  border-bottom-left-radius: 3px;
 }
 .bubble.user .bubble-text {
   background: #6d44c0;
   color: #fff;
   font-weight: 400;
-  border-bottom-right-radius: 1px;
+  border-bottom-right-radius: 3px;
 }
 
 /* ── botões de opção do SDR ── */
@@ -277,7 +277,7 @@ path.leaflet-interactive:focus { outline: none !important; }
 .opcao-btn {
   background: #fff;
   border: 1px solid rgba(109,68,192,0.4);
-  border-radius: 2px;
+  border-radius: 20px;
   color: #6d44c0;
   font-size: 12px;
   padding: 5px 12px;
@@ -404,7 +404,7 @@ path.leaflet-interactive:focus { outline: none !important; }
   position: relative;
   background: #fffdf9;
   border: 1px solid #e0d8cc;
-  border-radius: 3px;
+  border-radius: 16px;
   padding: 30px;
   width: 420px;
   max-width: 92vw;
@@ -549,7 +549,7 @@ path.leaflet-interactive:focus { outline: none !important; }
 .corretor-selector select {
   background: #fff;
   border: 1px solid rgba(109, 68, 192, 0.25);
-  border-radius: 2px;
+  border-radius: 8px;
   color: #1a1614;
   font-size: 13px;
   padding: 6px 10px;
@@ -568,7 +568,7 @@ path.leaflet-interactive:focus { outline: none !important; }
   gap: 10px;
   background: rgba(109, 68, 192, 0.06);
   border: 1px solid rgba(109, 68, 192, 0.16);
-  border-radius: 3px;
+  border-radius: 10px;
   padding: 6px 12px;
 }
 
@@ -874,7 +874,7 @@ path.leaflet-interactive:focus { outline: none !important; }
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(109, 68, 192, 0.18);
-  border-radius: 3px;
+  border-radius: 12px;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -926,7 +926,7 @@ path.leaflet-interactive:focus { outline: none !important; }
   background: rgba(37, 99, 235, 0.08);
   color: #2563eb;
   border: 1px solid rgba(37, 99, 235, 0.3);
-  border-radius: 2px;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -1030,7 +1030,7 @@ path.leaflet-interactive:focus { outline: none !important; }
   background: #6d44c0;
   color: #fff;
   border: none;
-  border-radius: 2px;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.04em;
