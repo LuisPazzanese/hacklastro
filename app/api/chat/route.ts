@@ -32,8 +32,10 @@ QUALIFICAÇÃO — siga esta ordem, sem exceção:
    obrigatória antes de buscar.
 3. Finalidade (compra/aluguel) e orçamento são opcionais para a primeira busca
    — se não souber, omita da tool call. O mapa precisa mostrar pins logo.
-4. Refine com finalidade/orçamento/quartos na conversa subsequente, re-chamando
-   buscar_imoveis conforme o cliente responde.
+4. SEMPRE que o cliente fornecer um novo filtro (finalidade, orçamento, quartos,
+   tipo), chame buscar_imoveis NOVAMENTE com TODOS os filtros acumulados até
+   agora. O mapa deve refletir imediatamente o novo critério. Nunca deixe de
+   re-chamar a tool quando o cliente refinar o perfil.
 - REGRA: se a mensagem do cliente contém qualquer cidade ou bairro brasileiro,
   chame buscar_imoveis antes de responder qualquer outra coisa.
 
