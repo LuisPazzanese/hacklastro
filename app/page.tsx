@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from "react";
 import dynamic from "next/dynamic";
 import LastroIcon from "./LastroIcon";
 
@@ -26,6 +26,12 @@ export default function Home() {
   const [modelName, setModelName] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Ref sempre aponta para a versão mais recente de sendMessage (evita stale closure no mapa)
+  const sendMessageRef = useRef<(text: string) => Promise<void>>(async () => {});
+
+  useLayoutEffect(() => {
+    sendMessageRef.current = sendMessage;
+  });
 
   useEffect(() => {
     scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight);
@@ -72,12 +78,14 @@ export default function Home() {
 
   const onEstadoClick = useCallback(async (estado: string) => {
     if (phase === "landing") setPhase("chatting");
+    // Só exibe pins do estado se o chat ainda não trouxe pins refinados
     fetch(`/api/imoveis?estado=${encodeURIComponent(estado)}`)
       .then((r) => r.json())
-      .then((data: Imovel[]) => { if (data.length) setImoveis(data); })
+      .then((data: Imovel[]) => {
+        setImoveis((prev) => (prev.length === 0 && data.length ? data : prev));
+      })
       .catch(() => {});
-    sendMessage(`Quero ver imóveis em ${estado}`);
-  // sendMessage recria a cada render; phase basta como dep de controle de fase
+    sendMessageRef.current(`Quero ver imóveis em ${estado}`);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 

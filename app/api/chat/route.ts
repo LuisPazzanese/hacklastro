@@ -62,6 +62,13 @@ REGRAS:
   frase direta e profissional.
 - Responda sempre em português brasileiro.`;
 
+const FUNCIONARIOS = [
+  { id: "c1", nome: "Ana Costa" },
+  { id: "c2", nome: "Bruno Lima" },
+  { id: "c3", nome: "Carla Mendes" },
+  { id: "c4", nome: "Diego Ramos" },
+];
+
 const tools: Anthropic.Tool[] = [
   {
     name: "buscar_imoveis",
@@ -163,12 +170,6 @@ export async function POST(req: Request) {
       } else if (block.name === "registrar_lead") {
         const input = block.input as Record<string, unknown>;
         // Round-robin: atribui ao próximo funcionário na fila
-        const FUNCIONARIOS = [
-          { id: "c1", nome: "Ana Costa" },
-          { id: "c2", nome: "Bruno Lima" },
-          { id: "c3", nome: "Carla Mendes" },
-          { id: "c4", nome: "Diego Ramos" },
-        ];
         const statePath = path.join(process.cwd(), "agent", "state.json");
         let state = { proximoCorretor: 0 };
         try { state = JSON.parse(fs.readFileSync(statePath, "utf-8")); } catch {}

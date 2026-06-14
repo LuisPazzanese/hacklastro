@@ -1,4 +1,5 @@
 import imoveisData from "../../../agent/imoveis.json";
+import type { Imovel } from "../../../agent/match";
 
 export const runtime = "nodejs";
 
@@ -23,7 +24,7 @@ const ESTADO_PREFIX: Record<string, string> = {
 
 export async function GET(req: Request) {
   const estado = new URL(req.url).searchParams.get("estado") ?? "";
-  const todos = imoveisData as any[];
+  const todos = imoveisData as Imovel[];
   const prefix = ESTADO_PREFIX[estado];
 
   const lista = prefix

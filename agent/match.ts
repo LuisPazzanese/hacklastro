@@ -1,6 +1,3 @@
-import * as fs from "node:fs";
-import * as path from "node:path";
-
 /**
  * MATCH DE IMÓVEIS — núcleo determinístico do SDR (SEM LLM).
  * --------------------------------------------------------
@@ -42,21 +39,6 @@ export interface Resultado {
   matchedFields: string[]; // o que casou, p/ justificativa
 }
 
-// Tolerância: imóvel até 15% acima do teto ainda aparece (com penalidade).
-const TOLERANCIA_PRECO = 0.15;
-
-let cache: Imovel[] | null = null;
-function carregarImoveis(): Imovel[] {
-  if (cache) return cache;
-  const arq = path.join(__dirname, "imoveis.json");
-  try {
-    cache = JSON.parse(fs.readFileSync(arq, "utf-8")) as Imovel[];
-  } catch {
-    throw new Error(`Não foi possível carregar a base de imóveis em: ${arq}`);
-  }
-  return cache;
-}
-
 function norm(s: string): string {
   return s
     .toLowerCase()
@@ -67,7 +49,7 @@ function norm(s: string): string {
 
 export function buscarImoveis(
   filtros: Filtros,
-  imoveis: Imovel[] = carregarImoveis(),
+  imoveis: Imovel[],
   topN = 5,
 ): Resultado[] {
   const local = filtros.bairro ? norm(filtros.bairro) : null;
@@ -102,7 +84,7 @@ export function buscarImoveis(
     if (filtros.quartos != null) {
       const diff = Math.abs(im.quartos - filtros.quartos);
       score += diff === 0 ? 1.0 : diff === 1 ? 0.5 : 0.1;
-      matched.push(`${im.quartos} quartos`);
+      if (diff <= 1) matched.push(`${im.quartos} quartos`);
     } else {
       score += 0.5; // neutro quando não especificado
     }
@@ -134,25 +116,3 @@ export function buscarImoveis(
   return resultados.slice(0, topN);
 }
 
-// --- Modo de teste: npx tsx agent/match.ts — roda cenários de exemplo. ----
-if (require.main === module) {
-  const cenarios: { nome: string; filtros: Filtros }[] = [
-    { nome: "Família comprando 3q em Moema até 1M", filtros: { finalidade: "compra", orcamento: 1000000, quartos: 3, bairro: "Moema" } },
-    { nome: "Investidor compra 1-2q em Pinheiros até 700k", filtros: { finalidade: "compra", orcamento: 700000, quartos: 1, bairro: "Pinheiros" } },
-    { nome: "Aluguel urgente 2q aceita pet, até 4k", filtros: { finalidade: "aluguel", orcamento: 4000, quartos: 2 } },
-    { nome: "Casa pra comprar com 4 quartos", filtros: { finalidade: "compra", quartos: 4, tipo: "casa" } },
-  ];
-
-  for (const c of cenarios) {
-    console.log(`\n=== ${c.nome} ===`);
-    console.log("filtros:", c.filtros);
-    const res = buscarImoveis(c.filtros);
-    for (const r of res) {
-      console.log(
-        `  [${r.score.toFixed(2)}] ${r.imovel.id} ${r.imovel.bairro} ` +
-          `R$${r.imovel.preco.toLocaleString("pt-BR")} ${r.imovel.quartos}q ` +
-          `(${r.imovel.tipo}) — ${r.matchedFields.join("; ")}`
-      );
-    }
-  }
-}
