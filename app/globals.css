@@ -26,6 +26,9 @@ main {
 .map-bg.chatting { opacity: 1; }
 
 #map { width: 100%; height: 100%; background: #f5f2ed; }
+.leaflet-container { border: none !important; outline: none !important; }
+.leaflet-tile-pane { border: none; }
+.leaflet-map-pane { border: none; }
 
 /* ── landing content ── */
 .landing-content {
@@ -350,6 +353,21 @@ main {
   pointer-events: none;
   animation: fadeIn 0.6s ease 0.4s both;
 }
+
+/* ── tooltip de estado ── */
+.estado-tooltip {
+  background: rgba(255,253,250,0.92);
+  border: 1px solid rgba(109,68,192,0.2);
+  border-radius: 3px;
+  color: #6d44c0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.estado-tooltip::before { display: none; }
 
 /* ── pins do mapa ── */
 .pin-inner {
