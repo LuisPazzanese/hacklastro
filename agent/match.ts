@@ -57,7 +57,7 @@ export function buscarImoveis(
   // ── Hard filters ────────────────────────────────────────────────
   // Localização e tipo são eliminatórios. Preço nunca elimina.
   let candidatos = imoveis.filter((im) => {
-    if (norm(im.finalidade) !== norm(filtros.finalidade)) return false;
+    if (filtros.finalidade && norm(im.finalidade) !== norm(filtros.finalidade)) return false;
     if (filtros.tipo && norm(im.tipo) !== norm(filtros.tipo)) return false;
     if (local) {
       const campos = norm(`${im.bairro} ${im.cidade}`);
@@ -69,7 +69,7 @@ export function buscarImoveis(
   // Se tipo + geo zerou, relaxa só o tipo (mantém geo).
   if (candidatos.length === 0 && filtros.tipo && local) {
     candidatos = imoveis.filter((im) => {
-      if (norm(im.finalidade) !== norm(filtros.finalidade)) return false;
+      if (filtros.finalidade && norm(im.finalidade) !== norm(filtros.finalidade)) return false;
       const campos = norm(`${im.bairro} ${im.cidade}`);
       return campos.includes(local!);
     });

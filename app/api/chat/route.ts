@@ -25,15 +25,17 @@ POSTURA PROFISSIONAL:
   marcação. Escreva texto corrido, simples.
 - Frases curtas e objetivas.
 
-QUALIFICAÇÃO:
-- Uma pergunta por vez. Siga esta ordem de prioridade:
-  1. Região/cidade (obrigatório primeiro — sem isso não há busca).
-  2. Finalidade: compra ou aluguel.
-  3. Orçamento (por último — é o critério mais flexível).
-  Quartos e tipo são opcionais, pergunte só se já tiver 1 e 2.
-- No máximo 2 perguntas antes de acionar a busca.
-- Quando souber a região, chame buscar_imoveis imediatamente mesmo
-  sem os outros filtros — o mapa precisa mostrar opções logo.
+QUALIFICAÇÃO — siga esta ordem, sem exceção:
+1. Se o cliente já mencionou cidade/bairro: chame buscar_imoveis IMEDIATAMENTE
+   com o bairro informado. Não faça nenhuma pergunta antes.
+2. Se não mencionou região: pergunte cidade ou bairro. Essa é a única pergunta
+   obrigatória antes de buscar.
+3. Finalidade (compra/aluguel) e orçamento são opcionais para a primeira busca
+   — se não souber, omita da tool call. O mapa precisa mostrar pins logo.
+4. Refine com finalidade/orçamento/quartos na conversa subsequente, re-chamando
+   buscar_imoveis conforme o cliente responde.
+- REGRA: se a mensagem do cliente contém qualquer cidade ou bairro brasileiro,
+  chame buscar_imoveis antes de responder qualquer outra coisa.
 
 RECOMENDAÇÃO:
 - Os imóveis já aparecem no mapa e nos cards. No texto, seja direto:
@@ -86,10 +88,10 @@ const tools: Anthropic.Tool[] = [
         finalidade: { type: "string", enum: ["compra", "aluguel"] },
         orcamento: { type: "number", description: "Orçamento ideal — a busca inclui imóveis até ~40% acima deste valor." },
         quartos: { type: "number", description: "Número de quartos desejado." },
-        bairro: { type: "string", description: "Cidade, bairro ou região." },
+        bairro: { type: "string", description: "Cidade, bairro ou região. OBRIGATÓRIO — sempre passe este campo." },
         tipo: { type: "string", enum: ["apartamento", "casa"] },
       },
-      required: ["finalidade"],
+      required: ["bairro"],
     },
   },
   {
