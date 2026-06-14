@@ -1,4 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { buscarImoveis, type Filtros, type Imovel } from "../../../agent/match";
 import imoveisData from "../../../agent/imoveis.json";
 
@@ -171,6 +173,7 @@ export async function POST(req: Request) {
         reply,
         imoveis: imoveisEncontrados,
         lead: leadRegistrado,
+        model: MODEL,
       });
     }
 
@@ -189,7 +192,35 @@ export async function POST(req: Request) {
         imoveisEncontrados = lista;
         result = { encontrados: lista.length, imoveis: lista };
       } else if (block.name === "registrar_lead") {
-        const lead = { registrado_em: new Date().toISOString(), ...(block.input as object) } as Record<string, unknown>;
+        const input = block.input as Record<string, unknown>;
+        const lead: Record<string, unknown> = {
+          id: Date.now().toString(36),
+          registrado_em: new Date().toISOString(),
+          status: "disponivel",
+          aceito_por: null,
+          aceito_em: null,
+          ...input,
+        };
+        // Calcular score de qualificação (0–100)
+        let score = 0;
+        if (input.nome) score += 20;
+        if (input.contato) score += 20;
+        if (input.orcamento) score += 20;
+        if (input.bairro) score += 20;
+        if (Array.isArray(input.imoveis_interesse) && input.imoveis_interesse.length > 0) score += 20;
+        lead.score_qualificacao = score;
+
+        // Persistir em agent/leads.json
+        const leadsPath = path.join(process.cwd(), "agent", "leads.json");
+        let leads: Record<string, unknown>[] = [];
+        try {
+          leads = JSON.parse(fs.readFileSync(leadsPath, "utf-8"));
+        } catch {
+          leads = [];
+        }
+        leads.push(lead);
+        fs.writeFileSync(leadsPath, JSON.stringify(leads, null, 2), "utf-8");
+
         leadRegistrado = lead;
         await notificarCorretor(lead);
         result = { ok: true, mensagem: "Lead registrado no CRM. Um corretor dará seguimento." };

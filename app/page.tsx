@@ -23,6 +23,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [imoveis, setImoveis] = useState<Imovel[]>([]);
   const [selected, setSelected] = useState<Imovel | null>(null);
+  const [modelName, setModelName] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -110,6 +111,7 @@ export default function Home() {
       setHistory(data.messages ?? novaHistory);
       setDisplay((d) => [...d, { role: "sdr", text: data.reply ?? "(sem resposta)" }]);
       if (data.imoveis?.length) setImoveis(data.imoveis);
+      if (data.model) setModelName(data.model);
     } catch {
       setDisplay((d) => [...d, { role: "sdr", text: "Ops, tive um problema. Tenta de novo?" }]);
     } finally {
@@ -175,6 +177,7 @@ export default function Home() {
             <div className="chat-header" onMouseDown={onHeaderMouseDown}>
               <LastroIcon size={14} color="#6d44c0" />
               Lastro SDR
+              {modelName && <span className="model-badge">{modelName}</span>}
               <span className="drag-hint">⠿</span>
             </div>
 
