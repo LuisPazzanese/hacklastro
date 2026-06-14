@@ -4,7 +4,6 @@
   "private": true,
   "description": "SDR imobiliário com IA — chat que qualifica o lead e mostra imóveis num mapa do Brasil.",
   "scripts": {
-    "agent": "tsx --env-file=.env agent/agent.ts",
     "dev": "next dev",
     "build": "next build",
     "start": "next start"

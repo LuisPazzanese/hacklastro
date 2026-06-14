@@ -4,4 +4,5 @@ node_modules/
 .next/
 .claude
 leads.json
+state.json
 .vercel

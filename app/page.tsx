@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import LastroIcon from "./LastroIcon";
 
@@ -26,12 +26,6 @@ export default function Home() {
   const [modelName, setModelName] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const movedRight = useRef(false);
-
-  // Painel sempre usa position:fixed com coordenadas explícitas.
-  // null = não inicializado ainda (CSS centraliza temporariamente)
-  const [panelPos, setPanelPos] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight);
@@ -41,59 +35,6 @@ export default function Home() {
     if (phase === "chatting") setTimeout(() => inputRef.current?.focus(), 300);
   }, [phase]);
 
-  // Inicializa a posição do painel logo que ele aparece
-  useEffect(() => {
-    if (phase !== "chatting" || panelPos) return;
-    const panel = panelRef.current;
-    if (!panel) return;
-    // Lê a posição atual (enquanto CSS ainda está centralizando)
-    const r = panel.getBoundingClientRect();
-    setPanelPos({ x: r.left, y: r.top });
-  });
-
-  // Quando imóveis chegam pela 1ª vez, slide para a direita
-  useEffect(() => {
-    if (imoveis.length === 0 || movedRight.current) return;
-    movedRight.current = true;
-    const panel = panelRef.current;
-    if (!panel) return;
-    const w = panel.getBoundingClientRect().width;
-    setPanelPos((p) => p ? { x: window.innerWidth - w - 20, y: p.y } : p);
-  }, [imoveis.length]);
-
-  // ── Drag ──────────────────────────────────────────────────────────
-  function onHeaderMouseDown(e: React.MouseEvent) {
-    e.preventDefault();
-    const panel = panelRef.current;
-    if (!panel || !panelPos) return;
-
-    const startMouseX = e.clientX;
-    const startMouseY = e.clientY;
-    const startPanelX = panelPos.x;
-    const startPanelY = panelPos.y;
-
-    function onMove(ev: MouseEvent) {
-      if (!panel) return;
-      const newX = startPanelX + (ev.clientX - startMouseX);
-      const newY = startPanelY + (ev.clientY - startMouseY);
-      panel.style.left = newX + "px";
-      panel.style.top  = newY + "px";
-    }
-
-    function onUp(ev: MouseEvent) {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-      // persiste a posição final no estado
-      const newX = startPanelX + (ev.clientX - startMouseX);
-      const newY = startPanelY + (ev.clientY - startMouseY);
-      setPanelPos({ x: newX, y: newY });
-    }
-
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-  }
-
-  // ── Envio ─────────────────────────────────────────────────────────
   async function sendMessage(text: string) {
     if (!text || loading) return;
     setInput("");
@@ -129,14 +70,25 @@ export default function Home() {
     if (e.key === "Enter" && !e.shiftKey) send();
   }
 
-  const panelStyle: React.CSSProperties = panelPos
-    ? { position: "fixed", left: panelPos.x, top: panelPos.y, transform: "none" }
-    : { position: "fixed", left: "50%", top: "50%", transform: "translate(-50%,-50%)" };
+  const onEstadoClick = useCallback(async (estado: string) => {
+    if (phase === "landing") setPhase("chatting");
+    fetch(`/api/imoveis?estado=${encodeURIComponent(estado)}`)
+      .then((r) => r.json())
+      .then((data: Imovel[]) => { if (data.length) setImoveis(data); })
+      .catch(() => {});
+    sendMessage(`Quero ver imóveis em ${estado}`);
+  // sendMessage recria a cada render; phase basta como dep de controle de fase
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   return (
     <main suppressHydrationWarning>
       <div className={`map-bg ${phase}`}>
-        <MapView imoveis={imoveis} onSelect={setSelected} />
+        <MapView
+          imoveis={imoveis}
+          onSelect={setSelected}
+          onEstadoClick={onEstadoClick}
+        />
       </div>
 
       {/* LANDING */}
@@ -165,7 +117,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* CHAT */}
+      {/* CHAT SIDEBAR */}
       {phase === "chatting" && (
         <>
           <div className="brand-corner">
@@ -173,12 +125,11 @@ export default function Home() {
             LASTRO
           </div>
 
-          <div ref={panelRef} className="chat-panel" style={panelStyle}>
-            <div className="chat-header" onMouseDown={onHeaderMouseDown}>
+          <div className="chat-panel">
+            <div className="chat-header">
               <LastroIcon size={14} color="#6d44c0" />
               Lastro SDR
               {modelName && <span className="model-badge">{modelName}</span>}
-              <span className="drag-hint">⠿</span>
             </div>
 
             <div className="messages" ref={scrollRef}>
@@ -188,7 +139,6 @@ export default function Home() {
                     <div className="bubble-text">{m.text}</div>
                   </div>
                 );
-                // Parseia OPÇÕES: do texto do SDR
                 const optMatch = m.text.match(/OPÇÕES:\n((?:- .+\n?)+)/);
                 const opcoes = optMatch
                   ? optMatch[1].trim().split("\n").map(l => l.replace(/^- /, ""))

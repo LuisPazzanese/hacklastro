@@ -106,37 +106,6 @@ const tools: Anthropic.Tool[] = [
   },
 ];
 
-async function notificarCorretor(lead: Record<string, unknown>) {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
-  if (!token || !chatId) return;
-
-  const imoveis = (lead.imoveis_interesse as string[] | undefined)?.join(", ") ?? "—";
-  const texto = [
-    "🏠 Novo lead — Lastro SDR",
-    `👤 Nome: ${lead.nome ?? "não informado"}`,
-    `📱 Contato: ${lead.contato ?? "não informado"}`,
-    `🎯 Finalidade: ${lead.finalidade ?? "—"}`,
-    `💰 Orçamento: ${lead.orcamento ? `R$ ${Number(lead.orcamento).toLocaleString("pt-BR")}` : "—"}`,
-    `🛏 Quartos: ${lead.quartos ?? "—"}`,
-    `📍 Região: ${lead.bairro ?? "—"}`,
-    `🏢 Imóveis de interesse: ${imoveis}`,
-    lead.observacoes ? `📝 Obs: ${lead.observacoes}` : "",
-  ].filter(Boolean).join("\n");
-
-  try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text: texto }),
-    });
-    const json = await res.json();
-    if (!json.ok) console.error("[Telegram] erro:", JSON.stringify(json));
-    else console.log("[Telegram] mensagem enviada ok");
-  } catch (e) {
-    console.error("[Telegram] fetch falhou:", e);
-  }
-}
 
 export async function POST(req: Request) {
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -193,22 +162,37 @@ export async function POST(req: Request) {
         result = { encontrados: lista.length, imoveis: lista };
       } else if (block.name === "registrar_lead") {
         const input = block.input as Record<string, unknown>;
-        const lead: Record<string, unknown> = {
-          id: Date.now().toString(36),
-          registrado_em: new Date().toISOString(),
-          status: "disponivel",
-          aceito_por: null,
-          aceito_em: null,
-          ...input,
-        };
-        // Calcular score de qualificação (0–100)
+        // Round-robin: atribui ao próximo funcionário na fila
+        const FUNCIONARIOS = [
+          { id: "c1", nome: "Ana Costa" },
+          { id: "c2", nome: "Bruno Lima" },
+          { id: "c3", nome: "Carla Mendes" },
+          { id: "c4", nome: "Diego Ramos" },
+        ];
+        const statePath = path.join(process.cwd(), "agent", "state.json");
+        let state = { proximoCorretor: 0 };
+        try { state = JSON.parse(fs.readFileSync(statePath, "utf-8")); } catch {}
+        const funcionario = FUNCIONARIOS[state.proximoCorretor % FUNCIONARIOS.length];
+        state.proximoCorretor = (state.proximoCorretor + 1) % FUNCIONARIOS.length;
+        fs.writeFileSync(statePath, JSON.stringify(state), "utf-8");
+
+        // Score de qualificação (0–100)
         let score = 0;
         if (input.nome) score += 20;
         if (input.contato) score += 20;
         if (input.orcamento) score += 20;
         if (input.bairro) score += 20;
         if (Array.isArray(input.imoveis_interesse) && input.imoveis_interesse.length > 0) score += 20;
-        lead.score_qualificacao = score;
+
+        const lead: Record<string, unknown> = {
+          id: Date.now().toString(36),
+          registrado_em: new Date().toISOString(),
+          status: "novo",
+          atribuido_para: funcionario.id,
+          atribuido_para_nome: funcionario.nome,
+          score_qualificacao: score,
+          ...input,
+        };
 
         // Persistir em agent/leads.json
         const leadsPath = path.join(process.cwd(), "agent", "leads.json");
@@ -222,7 +206,6 @@ export async function POST(req: Request) {
         fs.writeFileSync(leadsPath, JSON.stringify(leads, null, 2), "utf-8");
 
         leadRegistrado = lead;
-        await notificarCorretor(lead);
         result = { ok: true, mensagem: "Lead registrado no CRM. Um corretor dará seguimento." };
       } else {
         result = { error: `tool desconhecida: ${block.name}` };
