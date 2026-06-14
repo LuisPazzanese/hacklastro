@@ -89,15 +89,15 @@ export function buscarImoveis(
       score += 0.5; // neutro quando não especificado
     }
 
-    // Preço: dentro do teto = bônus; acima = penaliza proporcionalmente.
+    // Preço: flexível — mostra até ~40% acima do teto com penalidade suave.
     if (filtros.orcamento != null) {
       if (im.preco <= filtros.orcamento) {
         score += 1.0;
         matched.push(`dentro do orçamento (R$ ${im.preco.toLocaleString("pt-BR")})`);
       } else {
         const excesso = (im.preco - filtros.orcamento) / filtros.orcamento;
-        score += Math.max(0, 1 - excesso * 2);
-        matched.push(`próximo ao orçamento (R$ ${im.preco.toLocaleString("pt-BR")})`);
+        score += Math.max(0, 1 - excesso * 1.5); // 40% acima → score 0.4 (ainda aparece)
+        if (excesso <= 0.4) matched.push(`próximo ao orçamento (R$ ${im.preco.toLocaleString("pt-BR")})`);
       }
     } else {
       score += 0.5;

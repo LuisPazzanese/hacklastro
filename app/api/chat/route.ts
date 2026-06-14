@@ -26,11 +26,14 @@ POSTURA PROFISSIONAL:
 - Frases curtas e objetivas.
 
 QUALIFICAÇÃO:
-- Uma pergunta por vez. Antes de buscar, obtenha no mínimo finalidade
-  (compra ou aluguel) e orçamento. Se possível, também cidade/bairro,
-  número de quartos e tipo (apartamento/casa).
-- No máximo 2 perguntas antes de acionar a busca — não prolongue
-  desnecessariamente.
+- Uma pergunta por vez. Siga esta ordem de prioridade:
+  1. Região/cidade (obrigatório primeiro — sem isso não há busca).
+  2. Finalidade: compra ou aluguel.
+  3. Orçamento (por último — é o critério mais flexível).
+  Quartos e tipo são opcionais, pergunte só se já tiver 1 e 2.
+- No máximo 2 perguntas antes de acionar a busca.
+- Quando souber a região, chame buscar_imoveis imediatamente mesmo
+  sem os outros filtros — o mapa precisa mostrar opções logo.
 
 RECOMENDAÇÃO:
 - Os imóveis já aparecem no mapa e nos cards. No texto, seja direto:
@@ -73,15 +76,15 @@ const tools: Anthropic.Tool[] = [
   {
     name: "buscar_imoveis",
     description:
-      "Busca imóveis compatíveis na base. Use só depois de ter finalidade " +
-      "(compra/aluguel) e orçamento. Retorna imóveis ordenados por " +
+      "Busca imóveis compatíveis na base. Use assim que souber a região — " +
+      "não espere todos os filtros. Retorna imóveis ordenados por " +
       "compatibilidade, cada um com matchedFields (o que casou) — use para " +
-      "justificar as recomendações.",
+      "justificar as recomendações. Preço é flexível: mostra até ~40% acima do orçamento.",
     input_schema: {
       type: "object",
       properties: {
         finalidade: { type: "string", enum: ["compra", "aluguel"] },
-        orcamento: { type: "number", description: "Teto de preço em reais." },
+        orcamento: { type: "number", description: "Orçamento ideal — a busca inclui imóveis até ~40% acima deste valor." },
         quartos: { type: "number", description: "Número de quartos desejado." },
         bairro: { type: "string", description: "Cidade, bairro ou região." },
         tipo: { type: "string", enum: ["apartamento", "casa"] },
