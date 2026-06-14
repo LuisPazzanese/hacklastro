@@ -72,9 +72,9 @@ export default function Home() {
     const startPanelY = panelPos.y;
 
     function onMove(ev: MouseEvent) {
+      if (!panel) return;
       const newX = startPanelX + (ev.clientX - startMouseX);
       const newY = startPanelY + (ev.clientY - startMouseY);
-      // atualiza o DOM diretamente para performance
       panel.style.left = newX + "px";
       panel.style.top  = newY + "px";
     }
